@@ -4,12 +4,11 @@ main = "src/index.ts"
 compatibility_date = "2024-12-05"
 compatibility_flags = ["nodejs_compat"]
 
+routes = [
+  { pattern = "*dou.gg/api/email", zone_name = "dou.gg" }
+]
+
 # Workers Logs
 # Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
-# Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
 [observability]
 enabled = true
-
-routes = [
-  { pattern = "email.dou.gg", custom_domain = true }
-]
