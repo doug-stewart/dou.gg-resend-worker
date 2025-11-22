@@ -1,7 +1,22 @@
+import { parse } from 'cookie';
 import { Resend } from 'resend';
 import { makeEmail } from './helpers/email';
 
-const chars: { [key: string]: string } = {
+type Env = {
+	RESEND_API_KEY: string;
+};
+
+type ContactForm = {
+	name?: string;
+	email?: string;
+	message?: string;
+	honey?: string;
+	[key: string]: string | undefined;
+};
+
+const MINIMUM_TIME = 2000;
+
+const CHARS: { [key: string]: string } = {
 	'&': '&amp;',
 	'<': '&lt;',
 	'>': '&gt;',
@@ -13,21 +28,30 @@ const chars: { [key: string]: string } = {
 };
 
 const sanitize = (string: string) => {
-	return String(string).replace(/[&<>"'`=\/]/g, function (s) {
-		return chars[s];
-	});
+	return String(string).replace(/[&<>"'`=\/]/g, (character) => CHARS[character]);
 };
 
 export default {
-	async fetch(request: any, env: any, ctx: any) {
-		const resend = new Resend(env.RESEND_API_KEY);
+	async fetch(request: Request, env: Env): Promise<Response> {
+		// Get form time cookie and make sure it's been long enough
+		const now = new Date().getTime();
+		const cookies = parse(request.headers.get('Cookie') || '');
+		const time = cookies['dougg_form_time'];
+		const fields = (await request.json()) as ContactForm;
 
-		const fields = await request.json();
-		const sanitized: any = {};
+		// If they fail the check, pretend like everything went fine.
+		if (!time || parseInt(time || '0') + MINIMUM_TIME > now || fields.honey !== '') {
+			return new Response('Success');
+		}
+
+		// Message probably isn't spam so send it along.
+		delete fields.honey;
+		const resend = new Resend(env.RESEND_API_KEY);
+		const sanitized: Record<string, string> = {};
 
 		for (const field of Object.keys(fields)) {
 			Object.assign(sanitized, {
-				[field]: sanitize(fields[field]).trim(),
+				[field]: sanitize(fields[field] || '').trim(),
 			});
 		}
 
