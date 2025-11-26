@@ -38,12 +38,12 @@ export default {
 		// Get form time cookie and make sure it's been long enough
 		const now = new Date().getTime();
 		const cookies = parse(request.headers.get('Cookie') || '');
-		const time = parseInt(cookies['dougg_form_time'] || '0');
+		const time = parseInt(cookies['dougg_form_time'] || '0') + MINIMUM_TIME;
 		const fields = (await request.json()) as ContactForm;
 
 		// If they fail the check, pretend like everything went fine.
-		if (time + MINIMUM_TIME > now || fields.subject !== '' || fields.honey !== '') {
-			return new Response(JSON.stringify({ message: 'Success', data: { now, time, cookies, fields } }), { status: 200 });
+		if (time > now || fields.subject !== '') {
+			return new Response('Success', { status: 200 });
 		}
 
 		// Make sure required fields are filled out.
@@ -52,13 +52,12 @@ export default {
 		}
 
 		// Message probably isn't spam so send it along.
-		delete fields.honey;
 		const resend = new Resend(env.RESEND_API_KEY);
 
 		const sanitized = {
 			name: sanitize(fields.name || ''),
 			email: sanitize(fields.email || ''),
-			message: sanitize(`time: ${time}\nnow: ${now}\nafter: ${time + MINIMUM_TIME > now}\n\n${fields.message}` || ''),
+			message: sanitize(fields.message || ''),
 		};
 
 		const { data, error } = await resend.emails.send({
