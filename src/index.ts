@@ -11,7 +11,6 @@ type ContactForm = {
 	email?: string;
 	message?: string;
 	honey?: string;
-	[key: string]: string | undefined;
 };
 
 const MINIMUM_TIME = 5000;
@@ -28,7 +27,9 @@ const CHARS: { [key: string]: string } = {
 };
 
 const sanitize = (string: string) => {
-	return String(string).replace(/[&<>"'`=\/]/g, (character) => CHARS[character]);
+	return String(string)
+		.replace(/[&<>"'`=\/]/g, (character) => CHARS[character])
+		.trim();
 };
 
 export default {
@@ -52,13 +53,12 @@ export default {
 		// Message probably isn't spam so send it along.
 		delete fields.honey;
 		const resend = new Resend(env.RESEND_API_KEY);
-		const sanitized: Record<string, string> = {};
 
-		for (const field of Object.keys(fields)) {
-			Object.assign(sanitized, {
-				[field]: sanitize(fields[field] || '').trim(),
-			});
-		}
+		const sanitized = {
+			name: sanitize(fields.name || ''),
+			email: sanitize(fields.email || ''),
+			message: sanitize(`time: ${time}\nnow: ${now}\nafter: ${parseInt(time || '0') + MINIMUM_TIME > now}\n\n${fields.message}` || ''),
+		};
 
 		const { data, error } = await resend.emails.send({
 			from: 'contact-form@dou.gg',
