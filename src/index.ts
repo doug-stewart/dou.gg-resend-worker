@@ -14,7 +14,7 @@ type ContactForm = {
 	[key: string]: string | undefined;
 };
 
-const MINIMUM_TIME = 8000;
+const MINIMUM_TIME = 5000;
 
 const CHARS: { [key: string]: string } = {
 	'&': '&amp;',
