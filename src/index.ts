@@ -14,7 +14,7 @@ type ContactForm = {
 	[key: string]: string | undefined;
 };
 
-const MINIMUM_TIME = 2000;
+const MINIMUM_TIME = 8000;
 
 const CHARS: { [key: string]: string } = {
 	'&': '&amp;',
@@ -42,6 +42,11 @@ export default {
 		// If they fail the check, pretend like everything went fine.
 		if (!time || parseInt(time || '0') + MINIMUM_TIME > now || fields.honey !== '') {
 			return new Response('Success');
+		}
+
+		// Make sure required fields are filled out.
+		if (!fields.name || !fields.email || !fields.message) {
+			return Response.json({ error: 'Please fill out all required fields.' }, { status: 400 });
 		}
 
 		// Message probably isn't spam so send it along.
